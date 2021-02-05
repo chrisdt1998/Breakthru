@@ -681,7 +681,7 @@ while running:
                     depth = 1
                     best_move = [0,0]
                     ## Iterative deepening where we keep computing until 10seconds is done or depth of 10 is reached
-                    while end - start < 10 and depth <= 10:
+                    while end - start < 5 and depth <= 10:
                         end = time.time()
                         chosen_move, minimax_score = minimax(board, silver_array, gold_array, depth, -math.inf, math.inf, i, True, TT, best_move)
                         ## choosing best_move as last chosen move as best move for best first search
