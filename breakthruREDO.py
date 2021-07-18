@@ -1,7 +1,5 @@
 import os
 import numpy as np
-import random
-import math
 import sys
 import time
 localpath = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +25,7 @@ class Board():
                                 [5, 4, 5, 6, 3, 7, 3, 7, 3, 7, 4, 5, 6]
                                 ])
         self.gold_array = gold_array.transpose()
+        self.board = self.create_board()
 
     def create_board(self):
         board = np.array([
@@ -44,8 +43,9 @@ class Board():
         return board
 
     ## Updating the board visual using pygame for the UI
-    def update_board(self, length, board):
+    def update_board(self, length, board, available_moves=None):
         window.fill((0, 0, 0))
+
         for j in range(11):
             for i in range(11):
                 if (i + j) % 2 == 0:
@@ -53,7 +53,10 @@ class Board():
                 else:
                     colour = (0, 0, 0)
 
-                pygame.draw.rect(window, colour, (i * length, j * length, length, length))
+                if available_moves is not None and self.is_in_arr([j, i], available_moves).size > 0:
+                    pygame.draw.rect(window, (0, 0, 255), (i * length, j * length, length, length))
+                else:
+                    pygame.draw.rect(window, colour, (i * length, j * length, length, length))
 
                 if board[j][i] == 1:
                     pygame.draw.circle(window, (192, 192, 192), (i * length + 25, j * length + 25), 10)
@@ -63,96 +66,23 @@ class Board():
                 if board[j][i] == 3:
                     pygame.draw.circle(window, (255, 0, 0), (i * length + 25, j * length + 25), 15)
 
+
+
         pygame.display.update()
-
-    ## Evaluation function
-    def evaluate_board(self, board, i, s_copy, g_copy):
-        reward = 0
-        ## Score the difference in number of pieces
-        reward += i * int(len(s_copy) - len(g_copy) - 7) * 100
-
-        ## Checking for gold mothership in elimation zone from silver piece
-        for j in range(0, s_copy.shape[0], 2):
-            if s_copy[j][0] + 1 < 11 and s_copy[j][1] + 1 < 11:
-                if board[s_copy[j][0] + 1][s_copy[j][1] + 1] == 3:
-                    reward += i * 200
-
-            if s_copy[j][0] - 1 >= 0 and s_copy[j][1] + 1 < 11:
-                if board[s_copy[j][0] - 1][s_copy[j][1] + 1] == 3:
-                    reward += i * 200
-
-            if s_copy[j][0] - 1 >= 0 and s_copy[j][1] - 1 >= 0:
-                if board[s_copy[j][0] - 1][s_copy[j][1] - 1] == 3:
-                    reward += i * 200
-
-            if s_copy[j][0] + 1 < 11 and s_copy[j][1] - 1 >= 0:
-                if board[s_copy[j][0] + 1][s_copy[j][1] - 1] == 3:
-                    reward += i * 200
-
-        ## Check if gold can make a winning move, silver should try block
-        ## Needs to be redone
-        x = np.argwhere(board > 2)
-        if x.size > 0:
-            check = [True, True, True, True]
-            for counter in range(1, 10):
-                if g_copy[0][0] + counter < 11:
-                    if board[g_copy[0][0] + counter][g_copy[0][1]] != 0:
-                        check[0] = False
-                    elif g_copy[0][0] + counter == 10 and check[0] == True:
-                        reward += -i * 200
-
-                if g_copy[0][0] - counter >= 0:
-                    if board[g_copy[0][0] - counter][g_copy[1][0]] != 0:
-                        check[1] = False
-                    elif g_copy[0][0] - counter == 0 and check[1] == True:
-                        reward += -i * 200
-
-                if g_copy[1][0] + counter < 11:
-                    if board[g_copy[0][0]][g_copy[1][0] + counter] != 0:
-                        check[2] = False
-                    elif g_copy[1][0] + counter == 10 and check[2] == True:
-                        reward += -i * 200
-
-                if g_copy[1][0] - counter >= 0:
-                    if board[g_copy[0][1]][g_copy[1][0] - counter] != 0:
-                        check[3] = False
-                    elif g_copy[1][0] - counter == 10 and check[3] == True:
-                        reward += -i * 200
-
-            ## reward protectors of Gold ship - cumulative
-            if g_copy[0][0] + counter < 11:
-                if board[g_copy[0][0] + 2][g_copy[1][0] + 2] == 2:
-                    reward += -i * 10
-
-            if g_copy[0][0] - counter >= 0:
-                if board[g_copy[0][0] - 2][g_copy[1][0] + 2] == 2:
-                    reward += -i * 10
-
-            if g_copy[1][0] + counter < 11:
-                if board[g_copy[0][0] + 2][g_copy[1][0] - 2] == 2:
-                    reward += -i * 10
-
-            if g_copy[1][0] - counter >= 0:
-                if board[g_copy[0][0] - 2][g_copy[1][0] - 2] == 2:
-                    reward += -i * 10
-
-        ## Award wining move with highest score
-        if x.size > 0:
-            if (x[0] or x[1] == 0) or (x[0] or x[1] == 10):
-                reward += -i * 100000
-        else:
-            reward += i * 100000
-
-        return reward
 
     def winning_move(self, board):
         x = np.argwhere(board > 2)
         winner = 0
+        print('x=', x)
         if x.size > 0:
-            if (x[0] or x[1] == 0) or (x[0] or x[1] == 10):
+            if (x[0][0] == 0 or x[0][1] == 0) or (x[0][0] == 10 or x[0][1] == 10):
                 winner = 1
+                print("Gold player wins!")
+                print("Game over.")
         else:
             winner = -1
+            print("Silver player wins!")
+            print("Game over.")
 
         return winner
 
@@ -163,56 +93,99 @@ class Board():
         return x
 
     ## THIS FUNCTIONS NEED TO BE REDUCED BECAUSE THERE IS TOO MUCH REPITITIVE CODE
-    def straight_moves(self, piece):
+    def straight_moves(self, piece, silver_array, gold_array):
+        print(piece)
         # Check right
-        x = self.silver_array[np.logical_and(self.silver_array[:, 0] == piece[0], self.silver_array[:, 1] > piece[1])]
-        x = np.vstack([x, self.gold_array[np.logical_and(self.gold_array[:, 0] == piece[0], self.gold_array[:, 1] > piece[1])]])
+        x = silver_array[np.logical_and(silver_array[:, 0] == piece[0], silver_array[:, 1] > piece[1])]
+        x = np.vstack([x, gold_array[np.logical_and(gold_array[:, 0] == piece[0],
+                                                         gold_array[:, 1] > piece[1])]])
 
-        limit_right = x[np.argmin(x[:, 1])]
-        right_moves = np.arange(piece[1] + 1, limit_right[1])
-        right_moves = np.stack([np.full(limit_right[1] - piece[1] - 1, piece[0]), right_moves], axis=-1)
-        print(right_moves)
+        if x.size > 0:
+            limit_right = x[np.argmin(x[:, 1])]
+            right_moves = np.arange(piece[1] + 1, limit_right[1]).astype(int)
+            right_moves = np.stack([np.full(limit_right[1] - piece[1] - 1, piece[0]), right_moves], axis=-1)
+        else:
+            limit_right = 11
+            right_moves = np.arange(piece[1] + 1, limit_right).astype(int)
+            right_moves = np.stack([np.full(limit_right - piece[1] - 1, piece[0]), right_moves], axis=-1)
 
         # Check left
-        x = self.silver_array[np.logical_and(self.silver_array[:, 0] == piece[0], self.silver_array[:, 1] < piece[1])]
-        x = np.vstack([x, self.gold_array[np.logical_and(self.gold_array[:, 0] == piece[0], self.gold_array[:, 1] < piece[1])]])
+        x = silver_array[np.logical_and(silver_array[:, 0] == piece[0], silver_array[:, 1] < piece[1])]
+        x = np.vstack([x, gold_array[np.logical_and(gold_array[:, 0] == piece[0],
+                                                         gold_array[:, 1] < piece[1])]])
 
-        limit_left = x[np.argmax(x[:, 1])]
-        left_moves = np.arange(limit_left[1] + 1, piece[1])
-        left_moves = np.stack([np.full(piece[1] - limit_left[1] - 1, piece[0]), left_moves], axis=-1)
-        print(left_moves)
+        if x.size > 0:
+            limit_left = x[np.argmax(x[:, 1])]
+            left_moves = np.arange(limit_left[1] + 1, piece[1])
+            left_moves = np.stack([np.full(piece[1] - limit_left[1] - 1, piece[0]), left_moves], axis=-1)
+        else:
+            limit_left = -1
+            left_moves = np.arange(limit_left + 1, piece[1])
+            left_moves = np.stack([np.full(piece[1] - limit_left - 1, piece[0]), left_moves], axis=-1)
 
         # Check down
-        x = self.silver_array[np.logical_and(self.silver_array[:, 1] == piece[1], self.silver_array[:, 0] > piece[0])]
+        x = silver_array[np.logical_and(silver_array[:, 1] == piece[1], silver_array[:, 0] > piece[0])]
         x = np.vstack(
-            [x, self.gold_array[np.logical_and(self.gold_array[:, 1] == piece[1], self.gold_array[:, 0] > piece[0])]])
+            [x, gold_array[np.logical_and(gold_array[:, 1] == piece[1], gold_array[:, 0] > piece[0])]])
 
-        limit_right = x[np.argmin(x[:, 0])]
-        right_moves = np.arange(piece[0] + 1, limit_right[0])
-        right_moves = np.stack([np.full(limit_right[0] - piece[0] - 1, piece[1]), right_moves], axis=-1)
-        print(right_moves)
-
-        # Check left
-        x = self.silver_array[np.logical_and(self.silver_array[:, 1] == piece[1], self.silver_array[:, 0] < piece[0])]
-        x = np.vstack([x, self.gold_array[np.logical_and(self.gold_array[:, 1] == piece[1], self.gold_array[:, 0] < piece[0])]])
-
-        limit_left = x[np.argmax(x[:, 0])]
-        left_moves = np.arange(limit_left[0] + 1, piece[0])
-        left_moves = np.stack([np.full(piece[0] - limit_left[0] - 1, piece[1]), left_moves], axis=-1)
-        print(left_moves)
-
-    def moveFunct(self, board, position, direction, new_position, g_copy, s_copy, valid_moves):
-        # Input arrays and board because we don't want to edit the main ones when searching for a move
-        # Check move is in valid_moves
-        # If move piece is also in opposition array then we have an elimination
-        # Update the board and arrays
-        if new_position not in valid_moves:
-            print("Move not legal, try again...")
+        if x.size > 0:
+            limit_down = x[np.argmin(x[:, 0])]
+            down_moves = np.arange(piece[0] + 1, limit_down[0])
+            down_moves = np.stack([down_moves, np.full(limit_down[0] - piece[0] - 1, piece[1])], axis=-1)
         else:
-            board[new_position[0]][new_position[1]] = board[position[0]][position[1]]
-            board[position[0]][position[1]] = 0
-            if new_position in g_copy:
+            limit_down = 11
+            down_moves = np.arange(piece[0] + 1, limit_down)
+            down_moves = np.stack([down_moves, np.full(limit_down - piece[0] - 1, piece[1])], axis=-1)
 
+        # Check up
+        x = silver_array[np.logical_and(silver_array[:, 1] == piece[1], silver_array[:, 0] < piece[0])]
+        x = np.vstack([x, gold_array[np.logical_and(gold_array[:, 1] == piece[1],
+                                                         gold_array[:, 0] < piece[0])]])
+
+        if x.size > 0:
+            limit_up = x[np.argmax(x[:, 0])]
+            up_moves = np.arange(limit_up[0] + 1, piece[0])
+            up_moves = np.stack([up_moves, np.full(piece[0] - limit_up[0] - 1, piece[1])], axis=-1)
+        else:
+            limit_up = -1
+            up_moves = np.arange(limit_up + 1, piece[0])
+            up_moves = np.stack([up_moves, np.full(piece[0] - limit_up - 1, piece[1])], axis=-1)
+
+        if right_moves.size > 0 or left_moves.size > 0 or down_moves.size > 0 or up_moves.size > 0:
+            return np.concatenate([x for x in [right_moves, left_moves, down_moves, up_moves] if x.size > 0])
+        else:
+            return np.array([])
+
+
+    def moveFunct(self, board, old_position, new_position, g_copy, s_copy):
+        elimination = False
+
+        # Update board
+        board[new_position[0]][new_position[1]] = board[old_position[0]][old_position[1]]
+        board[old_position[0]][old_position[1]] = 0
+
+        arr_index = self.is_in_arr(new_position, g_copy)
+        if arr_index.size > 0:
+            g_copy = np.delete(g_copy, arr_index, 0)
+            elimination = True
+        else:
+            arr_index = self.is_in_arr(new_position, s_copy)
+            if arr_index.size > 0:
+                s_copy = np.delete(s_copy, arr_index, 0)
+                elimination = True
+
+        arr_index = self.is_in_arr(old_position, g_copy)
+        if arr_index.size > 0:
+            g_copy[arr_index] = new_position
+        else:
+            arr_index = self.is_in_arr(old_position, s_copy)
+            if arr_index.size > 0:
+                s_copy[arr_index] = new_position
+
+        return board, g_copy, s_copy, elimination
+
+    def is_in_arr(self, position, array):
+        return np.argwhere(np.logical_and(array[:, 0] == position[0], array[:, 1] == position[1]))
 
 
 class Player():
@@ -222,10 +195,11 @@ class AI():
     pass
 
 class Game():
-    def __init__(self, board, gold_arr, silver_arr):
-        self.board = board
-        self.gold_arr = gold_arr
-        self.silver_arr = silver_arr
+    def __init__(self, game_board):
+        self.game_board = game_board
+        self.board = game_board.board
+        self.gold_arr = game_board.gold_array
+        self.silver_arr = game_board.silver_array
         self.player_turn = 'Gold'
 
     def initialize_prints(self):
@@ -233,9 +207,74 @@ class Game():
         print("Gold player plays first.")
         print("Press n to skip first turn.")
 
+    def run_player_turn(self, event, position, board, gold_array, silver_array, turn, available_moves, play, old_position=None):
+        player_turn = {1: 'Gold', -1: 'Silver'}
+        if player_turn[turn] == 'Gold':
+            player_arr = gold_array
+            opp_arr = silver_array
+        else:
+            player_arr = silver_array
+            opp_arr = gold_array
+
+        if position is None:
+            position = (np.floor(np.array(event.pos) / length)).astype(int)
+            position = position[::-1]
+            if self.game_board.is_in_arr(position, player_arr).size > 0:
+                print("check 1")
+                if old_position is None or (old_position is not None and (old_position != position).any()):
+                    print("check 2")
+                    straight_moves = self.game_board.straight_moves(position, silver_array, gold_array)
+
+                    if play == 0:
+                        elim_moves = self.game_board.elim_moves(position, opp_arr)
+                        available_moves = np.concatenate([x for x in [elim_moves, straight_moves] if x.size > 0])
+                    else:
+                        available_moves = straight_moves
+
+                    self.game_board.update_board(length, board, available_moves)
+                else:
+                    position = None
+            else:
+                position = None
+
+        else:
+            new_position = np.floor(np.array(event.pos) / length).astype(int)
+            new_position = new_position[::-1]
+            if self.game_board.is_in_arr(new_position, available_moves).size > 0:
+                old_position = new_position
+                board, gold_array, silver_array, elimination = self.game_board.moveFunct(board, position, new_position,
+                                                                                         gold_array, silver_array)
+                available_moves = None
+                self.game_board.update_board(length, board)
+                print(int(11 - position[0]), x_axis[position[1]], "->", int(11 - new_position[0]),
+                      x_axis[new_position[1]])
+
+                print((new_position == gold_array[0]).all())
+                if play == 1 or (new_position == gold_array[0]).all() or elimination:
+                    print("Next turn")
+                    turn = turn * -1
+                    play = 0
+                else:
+                    play = 1
+
+                position = None
+
+            elif (new_position == position).all():
+                position = None
+                available_moves = None
+
+        return position, board, gold_array, silver_array, turn, available_moves, play, old_position
+
     def start(self):
         running = True
+        turn = 1
+        position = None
+        available_moves = None
+        old_position = None
+        play = 0
         self.initialize_prints()
+        self.game_board.update_board(50, self.board)
+
         ## Game loop
         while running:
             for event in pygame.event.get():
@@ -245,88 +284,23 @@ class Game():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_n:
                         print("Gold player skips first turn.")
-                        player_turn = 'Silver'
+                        turn = -1
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        if player_turn == 'Gold':
-                            if first_click:
-                                ## Make first_click true if the first click clicks on a piece
-                                position = np.around(np.array(event.pos)/length)
-                                if position[0] in self.gold_arr[0] and position[1] in self.gold_arr[1]:
-                                    first_click = False
-                            elif first_click == False:
-                                first_click = True
-                                new_position = np.around(np.array(event.pos)/length)
-                                direction = new_position - position
-                                valid_move, silver_array, gold_array, winner, elimination, gold = moveFunct(board, position, direction, new_position, player_turn, i, gold_array, silver_array)
+                        position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
+                            event, position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position)
+                        self.game_board.update_board(50, self.board, available_moves)
+                        if self.game_board.winning_move(self.board) != 0:
+                            time.sleep(10)
+                            running = False
 
-                                if valid_move:
-                                    self.board.draw_board_func(length, board)
-                                    print(int(11 - position[0]), x_axis[position[1]], "->", int(11 - new_position[0]), x_axis[new_position[1]])
-                                    if play_2 or elimination or gold:
-                                        player_turn *= -1
-                                        if winner != 0:
-                                            player_turn = 0
-                                            if winner == 1:
-                                                print("Gold player wins!")
-                                            else:
-                                                print("Silver player wins!")
-                                        elif i == 1:
-                                            print("Silver player's turn")
-                                        else:
-                                            print("Gold player's turn")
-                                        play_2 = False
-                                    elif play_2 == False:
-                                        play_2 = True
-                        ## AI player's turn. Output if given by chosen move
-                        if player_turn == -1:
-                            leafs = 0
-                            start = time.time()
-                            end = 0
-                            depth = 1
-                            best_move = [0, 0]
-                            ## Iterative deepening where we keep computing until 10seconds is done or depth of 10 is reached
-                            while end - start < 10 and depth <= 10:
-                                end = time.time()
-                                chosen_move, minimax_score = minimax(board, silver_array, gold_array, depth, -math.inf, math.inf, i, True, TT, best_move)
-                                ## choosing best_move as last chosen move as best move for best first search
-                                best_move = chosen_move
-                                depth += 1
-                            print("depth search = ", depth - 1)
-                            print("nodes visited = ", leafs)
-                            ## If move was an elimination move
-                            if len(chosen_move) == 4:
-                                valid_move, silver_array, gold_array, board, winner = moveFunct_elim(board, int(chosen_move[0]), int(chosen_move[1]), int(chosen_move[2] - chosen_move[0]), int(chosen_move[3] - chosen_move[1]), player_turn, i, gold_array, silver_array)
-                                print(x_axis[int(chosen_move[1])], int(11 - chosen_move[0]), "->", x_axis[int(chosen_move[3])], int(11 - chosen_move[2]))
-                            ## If move was a pawn/mothership move
-                            else:
-                                valid_move, silver_array, gold_array, board, winner, g_piece = moveFunct_pawn(board, int(chosen_move[0]), int(chosen_move[1]), int(chosen_move[2] - chosen_move[0]), int(chosen_move[3] - chosen_move[1]), int(chosen_move[4]), int(chosen_move[5]), int(chosen_move[6] - chosen_move[4]), int(chosen_move[7] - chosen_move[5]), player_turn, i, gold_array, silver_array)
-                                if g_piece == 1:
-                                    print(x_axis[int(chosen_move[1])], int(11 - chosen_move[0]), "->", x_axis[int(chosen_move[3])], int(11 - chosen_move[2]))
-                                elif g_piece == 2:
-                                    print(x_axis[int(chosen_move[5])], int(11 - chosen_move[4]), "->", x_axis[int(chosen_move[7])], int(11 - chosen_move[6]))
-                                else:
-                                    print(x_axis[int(chosen_move[1])], int(11 - chosen_move[0]), "->", x_axis[int(chosen_move[3])], int(11 - chosen_move[2]), "and", x_axis[int(chosen_move[5])], int(11 - chosen_move[4]), "->", x_axis[int(chosen_move[7])], int(11 - chosen_move[6]))
-                            if valid_move:
-                                window.fill((0,0,0))
-                                draw_board_func(length, board)
-                                player_turn *= -1
-                                if winner != 0:
-                                    player_turn = 0
-                                    if winner == 1:
-                                        print("Gold player wins!")
-                                    else:
-                                        print("Silver player wins!")
-                                elif i == 1:
-                                    print("Gold player's turn")
-                                else:
-                                    print("Silver player's turn")
+
+
         pygame.quit()
 
 if __name__ == '__main__':
-    new_board = Board()
-    board = new_board.create_board()
+    game_board = Board()
     ## Which player is the gold player and consequently, which player plays first
     is_gold_player = True
     ## Setting up the board
@@ -336,6 +310,8 @@ if __name__ == '__main__':
     window = pygame.display.set_mode((length * 11, length * 11))
     pygame.display.set_caption("Breakthru")
     x_axis = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+    game = Game(game_board)
+    game.start()
 
 
 
