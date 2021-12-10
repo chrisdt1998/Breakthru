@@ -1,20 +1,34 @@
 import numpy as np
-import pygame
-
-from board import Board
-
-pygame.init()
 
 class Random_AI:
-    def __init__(self):
-        pass
+    def __init__(self, Game_board):
+        self.Game_board = Game_board
 
-    @staticmethod
-    def choose_move(piece, silver_array, gold_array, opp_arr):
-        straight_moves = Board.straight_moves(piece, silver_array, gold_array)
-        elim_moves = Board.elim_moves(piece, opp_arr)
-        available_moves = np.concatenate([x for x in [elim_moves, straight_moves] if x.size > 0])
-        move = np.random.randint(0, available_moves.shape[0])
-        print("From ", available_moves.shape[0], "available moves, random move chosen is: ", available_moves[move])
+    def choose_piece(self, player_arr, opp_arr, old_position):
+        # print(f"old_posi = {old_position}")
+        pieces_in_elim_zone = []
+        for piece in player_arr:
+            elim_moves = self.Game_board.elim_moves(piece, opp_arr)
+            # print(np.array_equal(piece, old_position), piece, old_position)
+            if elim_moves.shape[0] > 0 and not np.array_equal(piece, old_position):
+                pieces_in_elim_zone.append(piece)
+        if len(pieces_in_elim_zone) > 0:
+            move = np.random.randint(0, len(pieces_in_elim_zone))
+            return pieces_in_elim_zone[move]
+        else:
+            move = np.random.randint(0, player_arr.shape[0])
+            return player_arr[move]
 
-        return available_moves[move]
+    def choose_move(self, piece, silver_array, gold_array, opp_arr):
+        # Prioritize elimination moves
+        elim_moves = self.Game_board.elim_moves(piece, opp_arr)
+        if elim_moves.shape[0] > 0:
+            move = np.random.randint(0, elim_moves.shape[0])
+            return elim_moves[move]
+
+        straight_moves = self.Game_board.straight_moves(piece, silver_array, gold_array)
+
+        # available_moves = np.concatenate([x for x in [elim_moves, straight_moves] if x.size > 0])
+        move = np.random.randint(0, straight_moves.shape[0])
+
+        return straight_moves[move]

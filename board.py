@@ -14,11 +14,11 @@ class Board:
                                 [5, 4, 5, 6, 3, 7, 3, 7, 3, 7, 4, 5, 6]
                                 ])
         self.gold_array = gold_array.transpose()
-        self.board = self.create_board()
+        self.board = self.create()
         self.length = length
         self.window = pygame.display.set_mode((length * 11, length * 11))
 
-    def create_board(self):
+    def create(self):
         board = np.array([
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
@@ -30,10 +30,11 @@ class Board:
                         [0, 1, 0, 0, 2, 2, 2, 0, 0, 1, 0],
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ])
         return board
 
-    def update_board(self, available_moves=None):
+    def update(self, available_moves=None):
         self.window.fill((0, 0, 0))
 
         for j in range(11):
@@ -61,7 +62,6 @@ class Board:
     def winning_move(self, board):
         x = np.argwhere(board > 2)
         winner = 0
-        print('x=', x)
         if x.size > 0:
             if (x[0][0] == 0 or x[0][1] == 0) or (x[0][0] == 10 or x[0][1] == 10):
                 winner = 1
@@ -74,16 +74,78 @@ class Board:
 
         return winner
 
-    @staticmethod
-    def elim_moves(piece, array):
+    def evaluate_board(self, board, player, silver_arr, gold_arr):
+        i = -1
+        if player == 'Gold': i = -1
+        reward = 0
+        ## Score the difference in number of pieces
+        reward += i * int(len(silver_arr) - len(gold_arr) - 14) * 100
+        ## Checking for gold mothership in elimation zone from silver piece
+        for piece in silver_arr:
+            if piece[0] + 1 < 11 and piece[1] + 1 < 11:
+                if board[piece[0] + 1][piece[1] + 1] == 3:
+                    reward += i * 200
+            if piece[0] - 1 >= 0 and piece[1] + 1 < 11:
+                if board[piece[0] - 1][piece[1] + 1] == 3:
+                    reward += i * 200
+            if piece[0] + 1 < 11 and piece[1] - 1 >= 0:
+                if board[piece[0] + 1][piece[1] - 1] == 3:
+                    reward += i * 200
+            if piece[0] - 1 >= 0 and piece[1] - 1 >= 0:
+                if board[piece[0] - 1][piece[1] - 1] == 3:
+                    reward += i * 200
+
+        # ## Check if gold can make a winning move, silver should try block
+        # check1 = True
+        # check2 = True
+        # check3 = True
+        # check4 = True
+        # for counter in range(1, 10):
+        #     if g_copy[0] + counter < 11:
+        #         if board[g_copy[0] + counter][g_copy[1]] != 0:
+        #             check1 = False
+        #         elif g_copy[0] + counter == 10 and check1 == True:
+        #             reward += -i * 200
+        #     if g_copy[0] - counter >= 0:
+        #         if board[g_copy[0] - counter][g_copy[1]] != 0:
+        #             check2 = False
+        #         elif g_copy[0] - counter == 0 and check2 == True:
+        #             reward += -i * 200
+        #     if g_copy[1] + counter < 11:
+        #         if board[g_copy[0]][g_copy[1] + counter] != 0:
+        #             check3 = False
+        #         elif g_copy[1] + counter == 10 and check3 == True:
+        #             reward += -i * 200
+        #     if g_copy[1] - counter >= 0:
+        #         if board[g_copy[0]][g_copy[1] - counter] != 0:
+        #             check4 = False
+        #         elif g_copy[1] - counter == 10 and check4 == True:
+        #             reward += -i * 200
+
+        ## Award wining move with highest score
+        no_winner = 0
+        for c1 in range(11):
+            for c2 in range(11):
+                if board[c1][c2] == 3:
+                    if c1 == 0 or c1 == 10 or c2 == 0 or c2 == 10:
+                        reward += -i * 100000
+                    no_winner = 1
+                    break
+            else:
+                continue
+            break
+        if no_winner == 0:
+            reward += i * 100000
+        return reward
+
+
+    def elim_moves(self, piece, array):
         x = array[np.logical_and(abs(np.full(array.shape[0], piece[0]) - array[:, 0]) == 1,
                                  abs(np.full(array.shape[0], piece[1]) - array[:, 1]) == 1)]
 
         return x
 
-    @staticmethod
-    def straight_moves(piece, silver_array, gold_array):
-        print(piece)
+    def straight_moves(self, piece, silver_array, gold_array):
         # Check right
         x = silver_array[np.logical_and(silver_array[:, 0] == piece[0], silver_array[:, 1] > piece[1])]
         x = np.vstack([x, gold_array[np.logical_and(gold_array[:, 0] == piece[0],
