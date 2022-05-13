@@ -3,7 +3,7 @@ import pygame
 
 
 class Board:
-    def __init__(self, length):
+    def __init__(self, length=50):
         silver_array = np.array([
                                 [1, 1, 1, 1, 1, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 9, 9, 9, 9, 9],
                                 [3, 4, 5, 6, 7, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 3, 4, 5, 6, 7]
@@ -53,7 +53,6 @@ class Board:
                     pygame.draw.circle(self.window, (192, 192, 192), (i * self.length + 25, j * self.length + 25), 10)
                 elif self.board[j][i] == 2:
                     pygame.draw.circle(self.window, (255, 223, 0), (i * self.length + 25, j * self.length + 25), 10)
-
                 if self.board[j][i] == 3:
                     pygame.draw.circle(self.window, (255, 0, 0), (i * self.length + 25, j * self.length + 25), 15)
 
@@ -75,12 +74,14 @@ class Board:
         return winner
 
     def evaluate_board(self, board, player, silver_arr, gold_arr):
-        i = -1
+        # TODO: check i
+        i = 1
         if player == 'Gold': i = -1
         reward = 0
-        ## Score the difference in number of pieces
-        reward += i * int(len(silver_arr) - len(gold_arr) - 14) * 100
-        ## Checking for gold mothership in elimation zone from silver piece
+        # Score the difference in number of pieces
+        reward += i * int(len(silver_arr) - len(gold_arr) - 7) * 100
+        # Checking for gold mothership in elimation zone from silver piece
+        # TODO: change this to only look at the mother ship and look around it rather than looking at all silver pieces individually.
         for piece in silver_arr:
             if piece[0] + 1 < 11 and piece[1] + 1 < 11:
                 if board[piece[0] + 1][piece[1] + 1] == 3:
@@ -95,32 +96,33 @@ class Board:
                 if board[piece[0] - 1][piece[1] - 1] == 3:
                     reward += i * 200
 
-        # ## Check if gold can make a winning move, silver should try block
-        # check1 = True
-        # check2 = True
-        # check3 = True
-        # check4 = True
-        # for counter in range(1, 10):
-        #     if g_copy[0] + counter < 11:
-        #         if board[g_copy[0] + counter][g_copy[1]] != 0:
-        #             check1 = False
-        #         elif g_copy[0] + counter == 10 and check1 == True:
-        #             reward += -i * 200
-        #     if g_copy[0] - counter >= 0:
-        #         if board[g_copy[0] - counter][g_copy[1]] != 0:
-        #             check2 = False
-        #         elif g_copy[0] - counter == 0 and check2 == True:
-        #             reward += -i * 200
-        #     if g_copy[1] + counter < 11:
-        #         if board[g_copy[0]][g_copy[1] + counter] != 0:
-        #             check3 = False
-        #         elif g_copy[1] + counter == 10 and check3 == True:
-        #             reward += -i * 200
-        #     if g_copy[1] - counter >= 0:
-        #         if board[g_copy[0]][g_copy[1] - counter] != 0:
-        #             check4 = False
-        #         elif g_copy[1] - counter == 10 and check4 == True:
-        #             reward += -i * 200
+        ## Check if gold can make a winning move, silver should try block
+        check1 = True
+        check2 = True
+        check3 = True
+        check4 = True
+        # print(gold_arr)
+        for counter in range(1, 10):
+            if gold_arr[0][0] + counter < 11:
+                if board[gold_arr[0][0] + counter][gold_arr[0][1]] != 0:
+                    check1 = False
+                elif gold_arr[0][0] + counter == 10 and check1 is True:
+                    reward += -i * 200
+            if gold_arr[0][0] - counter >= 0:
+                if board[gold_arr[0][0] - counter][gold_arr[0][1]] != 0:
+                    check2 = False
+                elif gold_arr[0][0] - counter == 0 and check2 is True:
+                    reward += -i * 200
+            if gold_arr[0][1] + counter < 11:
+                if board[gold_arr[0][0]][gold_arr[0][1] + counter] != 0:
+                    check3 = False
+                elif gold_arr[0][1] + counter == 10 and check3 is True:
+                    reward += -i * 200
+            if gold_arr[0][1] - counter >= 0:
+                if board[gold_arr[0][0]][gold_arr[0][1] - counter] != 0:
+                    check4 = False
+                elif gold_arr[0][1] - counter == 10 and check4 is True:
+                    reward += -i * 200
 
         ## Award wining move with highest score
         no_winner = 0
@@ -136,6 +138,7 @@ class Board:
             break
         if no_winner == 0:
             reward += i * 100000
+        print(reward)
         return reward
 
 

@@ -14,3 +14,4 @@ gold_array = np.array([
 gold_array = gold_array.transpose()
 
 print(np.random.randint(0, 10))
+print(np.argwhere(silver_array == [1,3]))

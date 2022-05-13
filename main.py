@@ -31,12 +31,11 @@ if __name__ == '__main__':
     Minimax_AI = Minimax_AI(Game_board, 'Silver')
 
     player_1 = 'Human'
+    # player_1 = 'MiniMax'
     # player_2 = 'Random'
     player_2 = 'MiniMax'
-    search_depth = 4
+    # player_2 = 'Human'
+    search_depth = 2
     Game = Game(Game_board, length, Random_AI, Minimax_AI, search_depth, player_1, player_2)
     Minimax_AI.initialize_game(Game)
     Game.start()
-
-
-
