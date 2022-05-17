@@ -2,21 +2,59 @@ import math
 import numpy as np
 
 class Minimax_AI:
+    """
+    This is a class which represents the MiniMax searching algorithm. The algorithm has been enhanced by Alpha-Beta
+    pruning.
+    """
     def __init__(self, game_board, player):
+        """
+        This method initalizes the class.
+        :param game_board: Game board.
+        :type game_board: nd.array
+        :param player: Determines if the player is Gold or Silver.
+        :type player: str
+        """
         self.player = player
         self.Game_board = game_board
         self.node_count = 0
 
     def max_min_arrays(self, gold_array, silver_array):
+        """
+        This method decides which player array maximizes and which player array minimizes for the algorithm.
+        :param gold_array: Array containing gold piece positions.
+        :type gold_array: nd.array
+        :param silver_array: Array containing silver piece positions.
+        :type silver_array: nd.array
+        :return: The max and min arrays.
+        :rtype: nd.array
+        """
         if self.player == 'Gold':
             return gold_array, silver_array
         elif self.player == 'Silver':
             return silver_array, gold_array
 
     def initialize_game(self, game):
+        """
+        Method to initialize the game object.
+        :param game: Game object.
+        :type game: object
+        """
         self.Game = game
 
     def copy_arrays(self, board, gold_array, silver_array, old_position):
+        """
+        Method to copy arrays for when searching deeper into the recursion algorithm.
+        :param board: Game board.
+        :type board: nd.array
+        :param gold_array: Array containing gold pieces.
+        :type gold_array: nd.array
+        :param silver_array: Array containing silver pieces.
+        :type silver_array: nd.array
+        :param old_position: Array containing old position.
+        :type old_position: nd.array
+        :return: Copied arrays
+        :rtype: tuple
+        """
         if old_position is not None:
             copy_old_position = old_position.copy()
         else:
@@ -24,6 +62,21 @@ class Minimax_AI:
         return board.copy(), gold_array.copy(), silver_array.copy(), copy_old_position
 
     def generate_moves(self, play, piece, opp_array, silver_array, gold_array):
+        """
+        This method generates the moves that a piece can make.
+        :param play: If play is 1, then the player has already made one move and now cannot make an elimination move.
+        :type play: int
+        :param piece: Array containing the piece position.
+        :type piece: nd.array
+        :param opp_array: The array of the opposition pieces.
+        :type opp_array: nd.array
+        :param silver_array: Array containing silver pieces.
+        :type silver_array: nd.array
+        :param gold_array: Array containing gold pieces.
+        :type gold_array: nd.array
+        :return: Array of available moves the piece can make.
+        :rtype: nd.array
+        """
         straight_moves = self.Game_board.straight_moves(piece, silver_array, gold_array)
         if play != 1:
             elim_moves = self.Game_board.elim_moves(piece, opp_array)
@@ -36,6 +89,15 @@ class Minimax_AI:
         return available_moves
 
     def remove_played_pawn(self, array, old_position):
+        """
+        This method removes a played piece.
+        :param array: Array containg the piece.
+        :type array: nd.array
+        :param old_position: Position of the piece.
+        :type old_position: nd.array
+        :return: Returns the new array.
+        :rtype: nd.array
+        """
         if old_position is None:
             return array
         else:
@@ -43,6 +105,34 @@ class Minimax_AI:
             return np.delete(array, index, 0)
 
     def minimax(self, alpha, beta, depth, maximizing_player, board, gold_array, silver_array, turn, play, chosen_play, old_position):
+        """
+        This is the method that contains the MiniMax algorithm with Alpha-Beta enhancement. This method is used
+        recursively up to the pre-determined depth point.
+        :param alpha: Alpha value of the alpha-beta enhancement.
+        :type alpha: int
+        :param beta: Beta value of the alpha-beta enhancement.
+        :type beta: int
+        :param depth: Search depth.
+        :type depth: int
+        :param maximizing_player: Boolean containing if the turn is the maximizing player or not.
+        :type maximizing_player: bool
+        :param board: Game board.
+        :type board: nd.array
+        :param gold_array: Array containing gold pieces.
+        :type gold_array: nd.array
+        :param silver_array: Array containing silver pieces.
+        :type silver_array: nd.array
+        :param turn: 1 if it is Gold's turn, -1 if Silver's turn.
+        :type turn: int
+        :param play: If play is 1, then the player has already made one move and now cannot make an elimination move.
+        :type play: int
+        :param chosen_play: Array containing the move chosen.
+        :type chosen_play: nd.array
+        :param old_position: Array containng the old position.
+        :type old_position: nd.array
+        :return: Returns the reward and chosen move.
+        :rtype: tuple
+        """
         self.node_count += 1
         if depth == 0 or self.Game_board.winning_move(board) != 0:
             return self.Game_board.evaluate_board(board, self.player, silver_array, gold_array), chosen_play

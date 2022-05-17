@@ -8,18 +8,10 @@ from minimax_AI import Minimax_AI
 pygame.init()
 
 
-class Player:
-    pass
-
-
-
-
-
 if __name__ == '__main__':
-
-    ## Which player is the gold player and consequently, which player plays first
+    # Which player is the gold player and consequently, which player plays first
     is_gold_player = True
-    ## Setting up the board
+    # Setting up the board
     length = 50
     number_of_silvers = 20
     number_of_golds = 12

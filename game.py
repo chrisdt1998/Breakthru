@@ -5,7 +5,28 @@ import math
 pygame.init()
 
 class Game:
+    """
+    This class represents the core of the game. It contains methods that run each players turn when it is their
+    respective turn.
+    """
     def __init__(self, game_board, length, Random_AI, Minimax_AI, depth, player_gold, player_silver):
+        """
+        This method initializes the class.
+        :param game_board: Game board.
+        :type game_board: nd.array
+        :param length: Size of the board.
+        :type length: int
+        :param Random_AI: Class object for the Random_AI.
+        :type Random_AI: object
+        :param Minimax_AI: Class object for the Minimax_AI.
+        :type Minimax_AI: object
+        :param depth: Search depth for minimax.
+        :type depth: int
+        :param player_gold: Determines what is playing player_gold i.e. Human, Minimax or Random.
+        :type player_gold: str
+        :param player_silver: Determines what is playing player_silver i.e. Human, Minimax or Random.
+        :type player_silver: str
+        """
         self.Random_AI = Random_AI
         self.Minimax_AI = Minimax_AI
         self.Game_board = game_board
@@ -19,15 +40,58 @@ class Game:
         self.depth = depth
 
     def initialize_prints(self):
+        """
+        Method to show that the game is starting up.
+        :return:
+        :rtype:
+        """
         print("Game started...")
         print("Gold player plays first.")
         print("Press n to skip first turn.")
 
 
     def is_in_arr(self, position, array):
+        """
+        This method checks if a position is contained within an array.
+        :param position: Position of piece in question
+        :type position: nd.array
+        :param array: Array in question
+        :type array: nd.array
+        :return: True if is in the array otherwise False.
+        :rtype: bool
+        """
         return np.argwhere(np.logical_and(array[:, 0] == position[0], array[:, 1] == position[1]))
 
-    def run_player_turn(self, position, board, gold_array, silver_array, turn, available_moves, play, old_position=None, event=None, new_position=None, sim=False):
+    def run_player_turn(self, position, board, gold_array, silver_array, turn, available_moves, play,
+                        old_position=None, event=None, new_position=None, sim=False):
+        """
+        Method to run the player turn. Each player gets either 2 movement turns, or 1 elimination turn or 1 move of the
+        mothership (only in the case of gold).
+        :param position: Array containing the position of piece.
+        :type position: nd.array
+        :param board: Game board.
+        :type board: nd.array
+        :param gold_array: Array containing gold pieces.
+        :type gold_array: nd.array
+        :param silver_array: Array containing silver pieces.
+        :type silver_array: nd.array
+        :param turn: 1 if it is Gold's turn, -1 if Silver's turn.
+        :type turn: int
+        :param available_moves: nd.array containing all possible moves of a particular node.
+        :type available_moves: nd.array
+        :param play: If 0, the move has no restrictions. If 1, the next move can only be a movement move of a pawn.
+        :type play: int
+        :param old_position: Old position of the piece such that the same piece is not moved twice.
+        :type old_position: nd.array
+        :param event: Event containing the input from the human player.
+        :type event: pygame.event
+        :param new_position: New position of piece.
+        :type new_position: nd.array
+        :param sim: Used to simulated. TBD.
+        :type sim: bool
+        :return: Returns the same variables for recursion purposes.
+        :rtype: tuple
+        """
         player = self.players[turn]
         player_turn = {1: 'Gold', -1: 'Silver'}
         if player_turn[turn] == 'Gold':
@@ -74,7 +138,7 @@ class Game:
                 else:
                     new_position = np.floor(np.array(event.pos) / self.length).astype(int)
                     new_position = new_position[::-1]
-            # print(new_position.shape[0], available_moves.shape[0])
+
             if (player == "MiniMax" and sim is False) or self.is_in_arr(new_position, available_moves).size > 0:
                 old_position = new_position
                 board, gold_array, silver_array, elimination = self.Game_board.moveFunct(board, position, new_position,
@@ -100,6 +164,9 @@ class Game:
         return position, board, gold_array, silver_array, turn, available_moves, play, old_position
 
     def start(self):
+        """
+        This is the main method to start the game.
+        """
         running = True
         turn = 1
         position = None
@@ -107,9 +174,8 @@ class Game:
         old_position = None
         play = 0
         self.initialize_prints()
-        # self.game_board.update(50, self.board)
         self.Game_board.update()
-        ## Game loop
+        # Game loop
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -130,8 +196,9 @@ class Game:
                                 position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position, event)
                             self.Game_board.update(available_moves)
                             if self.Game_board.winning_move(self.board) != 0:
-                                pygame.time.wait(10000)
-                                running = False
+                                print("Close game when you are ready...")
+                                # pygame.time.wait(10000)
+                                # running = False
                 elif self.players[turn] == 'Random':
                     position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
                         position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
@@ -139,8 +206,9 @@ class Game:
                     self.Game_board.update(available_moves)
                     pygame.time.wait(1000)
                     if self.Game_board.winning_move(self.board) != 0:
-                        pygame.time.wait(10000)
-                        running = False
+                        print("Close game when you are ready...")
+                        # pygame.time.wait(10000)
+                        # running = False
                 elif self.players[turn] == 'MiniMax':
                     position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
                         position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
@@ -148,8 +216,9 @@ class Game:
                     print(old_position)
                     self.Game_board.update(available_moves)
                     if self.Game_board.winning_move(self.board) != 0:
-                        pygame.time.wait(10000)
-                        running = False
+                        print("Close game when you are ready...")
+                        # pygame.time.wait(10000)
+                        # running = False
 
 
         pygame.quit()

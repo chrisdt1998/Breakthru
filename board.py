@@ -3,7 +3,15 @@ import pygame
 
 
 class Board:
+    """
+    Class representing the board of the game.
+    """
     def __init__(self, length=50):
+        """
+        Method to initialize the class.
+        :param length: size of the board.
+        :type length: int
+        """
         silver_array = np.array([
                                 [1, 1, 1, 1, 1, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 9, 9, 9, 9, 9],
                                 [3, 4, 5, 6, 7, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 3, 4, 5, 6, 7]
@@ -19,6 +27,11 @@ class Board:
         self.window = pygame.display.set_mode((length * 11, length * 11))
 
     def create(self):
+        """
+        Method to create the starting board.
+        :return: board
+        :rtype: nd.array
+        """
         board = np.array([
                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                         [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
@@ -35,6 +48,11 @@ class Board:
         return board
 
     def update(self, available_moves=None):
+        """
+        Method to update the board visualization after a move is done in pygame.
+        :param available_moves: contains an array of possible moves from a piece if the piece has been clicked on.
+        :type available_moves: nd.array
+        """
         self.window.fill((0, 0, 0))
 
         for j in range(11):
@@ -59,6 +77,13 @@ class Board:
         pygame.display.update()
 
     def winning_move(self, board):
+        """
+        Method to check if a winning move has been performed.
+        :param board: current board.
+        :type board: nd.array
+        :return: 1 if gold player wins, -1 if silver player wins and 0 if neither wins.
+        :rtype: int
+        """
         x = np.argwhere(board > 2)
         winner = 0
         if x.size > 0:
@@ -74,7 +99,19 @@ class Board:
         return winner
 
     def evaluate_board(self, board, player, silver_arr, gold_arr):
-        # TODO: check i
+        """
+        Method to compute the score of a particular board composition.
+        :param board: game board.
+        :type board: nd.array
+        :param player: Determines which player's turn it is.
+        :type player: str
+        :param silver_arr: array containing coordinates of silver pieces .
+        :type silver_arr: nd.array
+        :param gold_arr: array containing coordinates of gold pieces .
+        :type gold_arr: nd.array
+        :return: score
+        :rtype: int
+        """
         i = 1
         if player == 'Gold': i = -1
         reward = 0
@@ -101,7 +138,6 @@ class Board:
         check2 = True
         check3 = True
         check4 = True
-        # print(gold_arr)
         for counter in range(1, 10):
             if gold_arr[0][0] + counter < 11:
                 if board[gold_arr[0][0] + counter][gold_arr[0][1]] != 0:
@@ -136,19 +172,40 @@ class Board:
             else:
                 continue
             break
+
         if no_winner == 0:
             reward += i * 100000
-        print(reward)
+
         return reward
 
 
     def elim_moves(self, piece, array):
+        """
+        Method which outputs the positions of pieces that are within elimination range from the piece
+        :param piece: The piece in question.
+        :type piece: nd.array
+        :param array: list of all opposition pieces.
+        :type array: nd.array
+        :return: array containing pieces in elimination range.
+        :rtype: nd.array
+        """
         x = array[np.logical_and(abs(np.full(array.shape[0], piece[0]) - array[:, 0]) == 1,
                                  abs(np.full(array.shape[0], piece[1]) - array[:, 1]) == 1)]
 
         return x
 
     def straight_moves(self, piece, silver_array, gold_array):
+        """
+        Method to compute the possible straight moves that the piece can make.
+        :param piece: The piece in question.
+        :type piece: nd.array
+        :param silver_array: Array of all silver pieces.
+        :type silver_array: nd.array
+        :param gold_array: Array of all gold pieces.
+        :type gold_array: nd.array
+        :return: array of all possible straight moves.
+        :rtype: nd.array
+        """
         # Check right
         x = silver_array[np.logical_and(silver_array[:, 0] == piece[0], silver_array[:, 1] > piece[1])]
         x = np.vstack([x, gold_array[np.logical_and(gold_array[:, 0] == piece[0],
@@ -211,6 +268,22 @@ class Board:
             return np.array([])
 
     def moveFunct(self, board, old_position, new_position, gold_array, silver_array):
+        """
+        This method performs the movement of a position from the original position to it's new position and updates
+        the board, silver array and gold array.
+        :param board: Game board.
+        :type board: nd.array
+        :param old_position: Initial position of piece.
+        :type old_position: nd.array
+        :param new_position: New position of piece.
+        :type new_position: nd.array
+        :param silver_array: Array of all silver pieces.
+        :type silver_array: nd.array
+        :param gold_array: Array of all gold pieces.
+        :type gold_array: nd.array
+        :return: The new board, gold_array and silver_array arrays as well as the elimination boolean.
+        :rtype: tuple
+        """
         elimination = False
 
         # Update board
@@ -238,4 +311,13 @@ class Board:
         return board, gold_array, silver_array, elimination
 
     def is_in_arr(self, position, array):
+        """
+        This method checks if a position is contained within an array.
+        :param position: Position of piece in question
+        :type position: nd.array
+        :param array: Array in question
+        :type array: nd.array
+        :return: True if is in the array otherwise False.
+        :rtype: bool
+        """
         return np.argwhere(np.logical_and(array[:, 0] == position[0], array[:, 1] == position[1]))
