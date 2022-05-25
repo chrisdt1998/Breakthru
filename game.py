@@ -175,6 +175,7 @@ class Game:
         play = 0
         self.initialize_prints()
         self.Game_board.update()
+        game_ended = False
         # Game loop
         while running:
             for event in pygame.event.get():
@@ -188,37 +189,40 @@ class Game:
 
                 if play == 0:
                     old_position = None
-
-                if self.players[turn] == 'Human':
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if event.button == 1:
-                            position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
-                                position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position, event)
-                            self.Game_board.update(available_moves)
-                            if self.Game_board.winning_move(self.board) != 0:
-                                print("Close game when you are ready...")
-                                # pygame.time.wait(10000)
-                                # running = False
-                elif self.players[turn] == 'Random':
-                    position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
-                        position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
-                        old_position, None)
-                    self.Game_board.update(available_moves)
-                    pygame.time.wait(1000)
-                    if self.Game_board.winning_move(self.board) != 0:
-                        print("Close game when you are ready...")
-                        # pygame.time.wait(10000)
-                        # running = False
-                elif self.players[turn] == 'MiniMax':
-                    position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
-                        position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
-                        old_position, sim=False)
-                    print(old_position)
-                    self.Game_board.update(available_moves)
-                    if self.Game_board.winning_move(self.board) != 0:
-                        print("Close game when you are ready...")
-                        # pygame.time.wait(10000)
-                        # running = False
+                if game_ended is False:
+                    if self.players[turn] == 'Human':
+                        if event.type == pygame.MOUSEBUTTONDOWN:
+                            if event.button == 1:
+                                position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
+                                    position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position, event)
+                                self.Game_board.update(available_moves)
+                                if self.Game_board.winning_move(self.board) != 0:
+                                    print("Close game when you are ready...")
+                                    game_ended = True
+                                    # pygame.time.wait(10000)
+                                    # running = False
+                    elif self.players[turn] == 'Random':
+                        position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
+                            position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
+                            old_position, None)
+                        self.Game_board.update(available_moves)
+                        pygame.time.wait(1000)
+                        if self.Game_board.winning_move(self.board) != 0:
+                            print("Close game when you are ready...")
+                            game_ended = True
+                            # pygame.time.wait(10000)
+                            # running = False
+                    elif self.players[turn] == 'MiniMax':
+                        position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play, old_position = self.run_player_turn(
+                            position, self.board, self.gold_arr, self.silver_arr, turn, available_moves, play,
+                            old_position, sim=False)
+                        print(old_position)
+                        self.Game_board.update(available_moves)
+                        if self.Game_board.winning_move(self.board) != 0:
+                            print("Close game when you are ready...")
+                            game_ended = True
+                            # pygame.time.wait(10000)
+                            # running = False
 
 
         pygame.quit()

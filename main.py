@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # player_2 = 'Random'
     player_2 = 'MiniMax'
     # player_2 = 'Human'
-    search_depth = 2
+    search_depth = 1
     Game = Game(Game_board, length, Random_AI, Minimax_AI, search_depth, player_1, player_2)
     Minimax_AI.initialize_game(Game)
     Game.start()
